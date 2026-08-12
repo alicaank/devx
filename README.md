@@ -211,31 +211,6 @@ Watch mode adds bounded CPU history, CPU/RAM/GPU session peaks, and recent start
 | `disk` | ✓ | ✓ | ✓ | — |
 | `ps` | ✓ | ✓ | ✓ | — |
 
-## Safety model
-
-- Analysis commands are read-only.
-- Interactive removal uses recoverable system trash, explicit confirmation, direct-child validation, and object-identity revalidation.
-- Recursive scans do not follow symlinks or cross filesystem boundaries.
-- Human terminal output neutralizes control characters in discovered names and paths.
-- No shell is used for external probes; commands receive separate argument arrays.
-- Snapshot collection uses a fixed allowlist of development-related environment variables. Full process arguments and environments are not captured.
-
-`devx` reports what appears safe or regeneratable, but it never bulk-deletes recommendations. Review paths and snapshots before acting on or sharing them.
-
-## Performance
-
-Disk traversal is streaming and caches the root filesystem identity. Duplicate scanning retains only paths needed by same-size candidate groups and reads contents only when hashing candidates. The interactive browser caps concurrency and supports cancellation; watch history is bounded.
-
-Representative release measurements on a warm Linux development tree (hardware and filesystem strongly affect results):
-
-| Command | Elapsed | Peak RSS |
-|---|---:|---:|
-| large-file query | 0.01 s | 4.4 MiB |
-| duplicate query | 0.05 s | 4.6 MiB |
-| `devx ps` | 0.30 s | 21 MiB |
-| minimal snapshot | 0.27 s | 31 MiB |
-| `devx doctor` | 0.27 s | 31 MiB |
-
 ## Platform support
 
 | Capability | Linux | macOS | Windows |
