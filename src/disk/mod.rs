@@ -237,7 +237,7 @@ pub fn duplicates(
             });
         }
     }
-    groups.sort_by(|a, b| b.reclaimable_bytes.cmp(&a.reclaimable_bytes));
+    groups.sort_by_key(|group| std::cmp::Reverse(group.reclaimable_bytes));
     let reclaimable_bytes = groups.iter().map(|group| group.reclaimable_bytes).sum();
     Ok(DuplicateReport {
         root,
