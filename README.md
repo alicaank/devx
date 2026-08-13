@@ -1,22 +1,8 @@
 # devx
 
-`devx` is a fast, local-only CLI for understanding a development machine. It diagnoses Python/CUDA/toolchain mismatches, compares portable snapshots, groups running processes by project, and explains where disk space is going.
+`devx` is a fast, local-only CLI for understanding a development machine. It compares portable environment snapshots, groups running processes by project, and explains where disk space is going.
 
 No daemon, Python package, account, or AI service is required.
-
-```console
-$ devx doctor
-Project: devx
-Git:     main · clean
-
-Environment
-✓ Python       3.12.4
-✓ PyTorch      2.8.0+cu128
-✓ torch CUDA   12.8
-✓ nvcc         12.8
-
-No problems found
-```
 
 ## Install
 
@@ -45,9 +31,6 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ## Quick start
 
 ```bash
-# Diagnose the current project and explain every finding
-devx doctor --explain
-
 # Browse storage interactively
 devx disk --interactive -C ~
 
@@ -65,32 +48,9 @@ devx snapshot --minimal --redact-paths -o laptop.json
 devx diff laptop.json server.json
 ```
 
-Use `-C PATH` with `snapshot`, `doctor`, and `disk` to inspect a directory other than the current one. Run `devx COMMAND --help` for every option.
+Use `-C PATH` with `snapshot` and `disk` to inspect a directory other than the current one. Run `devx COMMAND --help` for every option.
 
 ## Commands
-
-### `devx doctor`
-
-Checks the active Python, pip, PyTorch/CUDA, compilers, PATH, Git state, and project manifests. Project-aware checks cover Cargo, Python, Node, CMake, lockfiles, runtime requirements, and CUDA extensions.
-
-```bash
-devx doctor
-devx doctor --explain
-devx doctor --strict                 # exit 1 on warnings/errors
-devx doctor --markdown > doctor.md  # suitable for issues and CI artifacts
-devx doctor --json
-```
-
-Example finding:
-
-```text
-1. CUDA toolkit mismatch [cuda.toolkit-mismatch]
-   PyTorch CUDA: 12.8
-   nvcc: 12.4
-
-   Why this matters: Compiling CUDA extensions may fail or produce binaries for the wrong toolkit.
-   Suggested action: Activate a CUDA toolkit matching PyTorch, or install a matching PyTorch build.
-```
 
 ### `devx snapshot` and `devx diff`
 
@@ -203,19 +163,18 @@ Watch mode adds bounded CPU history, CPU/RAM/GPU session peaks, and recent start
 
 ## Export formats
 
-| Command | Human | JSON | CSV | Markdown |
-|---|:---:|:---:|:---:|:---:|
-| `snapshot` | — | ✓ | — | — |
-| `doctor` | ✓ | ✓ | — | ✓ |
-| `diff` | ✓ | ✓ | — | — |
-| `disk` | ✓ | ✓ | ✓ | — |
-| `ps` | ✓ | ✓ | ✓ | — |
+| Command | Human | JSON | CSV |
+|---|:---:|:---:|:---:|
+| `snapshot` | — | ✓ | — |
+| `diff` | ✓ | ✓ | — |
+| `disk` | ✓ | ✓ | ✓ |
+| `ps` | ✓ | ✓ | ✓ |
 
 ## Platform support
 
 | Capability | Linux | macOS | Windows |
 |---|:---:|:---:|:---:|
-| Snapshot, doctor, diff | ✓ | unverified | unverified |
+| Snapshot and diff | ✓ | unverified | unverified |
 | Disk capacity and scanning | ✓ | unverified | unverified |
 | Process grouping | ✓ | unverified | unverified |
 | Listening-port discovery | ✓ | — | — |

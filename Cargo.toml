@@ -3,11 +3,11 @@ name = "devx"
 version = "0.6.0"
 edition = "2024"
 rust-version = "1.92"
-description = "Read-only diagnostics for development environments"
+description = "Local snapshots, process views, and storage tools for development environments"
 license = "MIT"
 repository = "https://github.com/alicaank/devx"
 readme = "README.md"
-keywords = ["cli", "developer-tools", "diagnostics", "cuda", "disk-usage"]
+keywords = ["cli", "developer-tools", "snapshot", "processes", "disk-usage"]
 categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]

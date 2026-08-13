@@ -13,8 +13,6 @@ pub struct Cli {
 pub enum Command {
     /// Capture a normalized, portable description of this environment
     Snapshot(SnapshotArgs),
-    /// Diagnose suspicious settings in the current environment
-    Doctor(DoctorArgs),
     /// Analyze storage and optionally manage files interactively
     Disk(DiskArgs),
     /// Group running processes by development project
@@ -121,25 +119,6 @@ pub struct SnapshotArgs {
     /// Write the snapshot directly to a file
     #[arg(long, short = 'o', value_name = "FILE")]
     pub output: Option<PathBuf>,
-}
-
-#[derive(Debug, Args)]
-pub struct DoctorArgs {
-    /// Project directory to inspect
-    #[arg(long, short = 'C', default_value = ".")]
-    pub path: PathBuf,
-    /// Include evidence, impact, and suggested actions
-    #[arg(long)]
-    pub explain: bool,
-    /// Emit the diagnostic report as JSON
-    #[arg(long)]
-    pub json: bool,
-    /// Exit with status 1 when warnings or errors are found
-    #[arg(long)]
-    pub strict: bool,
-    /// Emit a Markdown report suitable for an issue or CI artifact
-    #[arg(long, conflicts_with = "json")]
-    pub markdown: bool,
 }
 
 fn parse_bytes(value: &str) -> Result<u64, String> {

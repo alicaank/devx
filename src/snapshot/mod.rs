@@ -133,12 +133,12 @@ pub struct EnvironmentSource {
 }
 
 pub fn scan(path: &Path) -> Result<Snapshot> {
-    scan_with(path, ScanProfile::Full)
+    scan_with(path, true)
 }
 
 pub fn scan_profile(path: &Path, minimal: bool) -> Result<Snapshot> {
     if minimal {
-        let mut snapshot = scan_with(path, ScanProfile::Doctor)?;
+        let mut snapshot = scan_with(path, false)?;
         snapshot.disk = DiskInfo::default();
         snapshot.environment = EnvironmentInfo::default();
         Ok(snapshot)
@@ -244,17 +244,7 @@ pub fn write(path: &Path, snapshot: &Snapshot, compact: bool) -> Result<()> {
     Ok(())
 }
 
-pub fn scan_for_doctor(path: &Path) -> Result<Snapshot> {
-    scan_with(path, ScanProfile::Doctor)
-}
-
-#[derive(Clone, Copy)]
-enum ScanProfile {
-    Full,
-    Doctor,
-}
-
-fn scan_with(path: &Path, profile: ScanProfile) -> Result<Snapshot> {
+fn scan_with(path: &Path, include_processes: bool) -> Result<Snapshot> {
     let path = fs::canonicalize(path)
         .with_context(|| format!("cannot resolve project path {}", path.display()))?;
     let name = path.file_name().map(|v| v.to_string_lossy().into_owned());
@@ -266,9 +256,12 @@ fn scan_with(path: &Path, profile: ScanProfile) -> Result<Snapshot> {
             let cuda = scope.spawn(|| cuda::scan(&path));
             let build = scope.spawn(|| build::scan(&path));
             let disk = scope.spawn(|| crate::disk::capacity(&path));
-            let processes = scope.spawn(|| match profile {
-                ScanProfile::Full => crate::processes::scan(Default::default()).projects,
-                ScanProfile::Doctor => Vec::new(),
+            let processes = scope.spawn(|| {
+                if include_processes {
+                    crate::processes::scan(Default::default()).projects
+                } else {
+                    Vec::new()
+                }
             });
             let environment = scope.spawn(environment::scan);
             (

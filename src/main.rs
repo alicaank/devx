@@ -1,7 +1,6 @@
 mod cli;
 mod diff;
 mod disk;
-mod doctor;
 mod output;
 mod processes;
 mod snapshot;
@@ -30,20 +29,6 @@ fn run() -> Result<()> {
                 snapshot::write(&path, &snapshot, args.compact)?;
             } else {
                 output::print_json(&snapshot, args.compact)?;
-            }
-        }
-        Command::Doctor(args) => {
-            let snapshot = snapshot::scan_for_doctor(&args.path)?;
-            let report = doctor::diagnose(&snapshot);
-            if args.json {
-                output::print_json(&report, false)?;
-            } else if args.markdown {
-                output::print_doctor_markdown(&snapshot, &report);
-            } else {
-                output::print_doctor(&snapshot, &report, args.explain);
-            }
-            if args.strict && report.has_problems() {
-                std::process::exit(1);
             }
         }
         Command::Disk(args) => {

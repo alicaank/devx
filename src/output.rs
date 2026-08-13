@@ -6,7 +6,6 @@ use serde::Serialize;
 use crate::{
     diff::{DiffReport, fields},
     disk::{DiskEntry, DiskReport, DuplicateReport, FileQueryReport, FilesystemReport},
-    doctor::{DoctorReport, Severity},
     processes::{ProcessInfo, ProcessReport, ProjectProcesses},
     snapshot::Snapshot,
 };
@@ -129,35 +128,6 @@ pub fn print_processes_csv(report: &ProcessReport) {
     }
 }
 
-pub fn print_doctor_markdown(snapshot: &Snapshot, report: &DoctorReport) {
-    println!("# devx doctor report\n");
-    println!(
-        "- Project: `{}`",
-        markdown(snapshot.project.name.as_deref().unwrap_or("unknown"))
-    );
-    println!("- Problems: {}\n", report.problem_count());
-    if report.diagnostics.is_empty() {
-        println!("No diagnostics found.");
-        return;
-    }
-    for diagnostic in &report.diagnostics {
-        println!(
-            "## {} `{}`\n",
-            markdown(&diagnostic.title),
-            markdown(&diagnostic.code)
-        );
-        println!("Severity: `{:?}`\n", diagnostic.severity);
-        for evidence in &diagnostic.evidence {
-            println!("- Observed: {}", markdown(evidence));
-        }
-        for origin in &diagnostic.origins {
-            println!("- Origin: `{}`", markdown(origin));
-        }
-        println!("\nWhy this matters: {}\n", markdown(&diagnostic.impact));
-        println!("Suggested action: {}\n", markdown(&diagnostic.action));
-    }
-}
-
 fn csv(value: &str) -> String {
     format!("\"{}\"", value.replace('"', "\"\""))
 }
@@ -173,10 +143,6 @@ fn safe(value: &str) -> String {
             }
         })
         .collect()
-}
-
-fn markdown(value: &str) -> String {
-    safe(value).replace('`', "\\`")
 }
 
 pub fn print_filesystems(report: &FilesystemReport) {
@@ -527,125 +493,6 @@ pub fn print_json<T: Serialize>(value: &T, compact: bool) -> Result<()> {
     }
     writeln!(lock)?;
     Ok(())
-}
-
-pub fn print_doctor(snapshot: &Snapshot, report: &DoctorReport, explain: bool) {
-    let project = snapshot.project.name.as_deref().unwrap_or("<unknown>");
-    println!("Project: {}", safe(project));
-    match (&snapshot.git.commit, snapshot.git.dirty) {
-        (Some(commit), Some(dirty)) => println!(
-            "Git:     {} · {}",
-            safe(commit),
-            if dirty { "dirty" } else { "clean" }
-        ),
-        _ => println!("Git:     not a repository"),
-    }
-    println!();
-    println!("Environment");
-    status("Python", snapshot.python.version.as_deref());
-    status("PyTorch", snapshot.python.torch_version.as_deref());
-    status("torch CUDA", snapshot.python.torch_cuda.as_deref());
-    status("nvcc", snapshot.cuda.nvcc_version.as_deref());
-    if let Some(home) = &snapshot.cuda.cuda_home {
-        println!("  CUDA_HOME    {}", safe(&home.display().to_string()));
-    }
-    println!();
-    let problem_count = report.problem_count();
-    if problem_count == 0 {
-        println!("No problems found");
-    } else {
-        println!(
-            "{} problem{} found",
-            problem_count,
-            if problem_count == 1 { "" } else { "s" }
-        );
-    }
-
-    let problems = report
-        .diagnostics
-        .iter()
-        .filter(|diagnostic| diagnostic.severity != Severity::Info)
-        .collect::<Vec<_>>();
-    let notes = report
-        .diagnostics
-        .iter()
-        .filter(|diagnostic| diagnostic.severity == Severity::Info)
-        .collect::<Vec<_>>();
-
-    if !explain {
-        for diagnostic in problems {
-            println!(
-                "{} {}",
-                marker(diagnostic.severity),
-                safe(&diagnostic.title)
-            );
-        }
-        if !notes.is_empty() {
-            println!();
-            println!("Notes");
-            for diagnostic in notes {
-                println!(
-                    "{} {}",
-                    marker(diagnostic.severity),
-                    safe(&diagnostic.title)
-                );
-            }
-        }
-        if !report.diagnostics.is_empty() {
-            println!();
-            println!("Run: devx doctor --explain");
-        }
-        return;
-    }
-
-    for (index, diagnostic) in problems.iter().enumerate() {
-        print_diagnostic(index + 1, diagnostic);
-    }
-    if !notes.is_empty() {
-        println!();
-        println!("Notes");
-        for (index, diagnostic) in notes.iter().enumerate() {
-            print_diagnostic(index + 1, diagnostic);
-        }
-    }
-}
-
-fn print_diagnostic(index: usize, diagnostic: &crate::doctor::Diagnostic) {
-    println!();
-    println!(
-        "{}. {} [{}]",
-        index,
-        safe(&diagnostic.title),
-        safe(&diagnostic.code)
-    );
-    for evidence in &diagnostic.evidence {
-        println!("   {}", safe(evidence));
-    }
-    if !diagnostic.origins.is_empty() {
-        println!();
-        println!("   Origin:");
-        for origin in &diagnostic.origins {
-            println!("     {}", safe(origin));
-        }
-    }
-    println!();
-    println!("   Why this matters: {}", safe(&diagnostic.impact));
-    println!("   Suggested action: {}", safe(&diagnostic.action));
-}
-
-fn status(label: &str, value: Option<&str>) {
-    match value {
-        Some(value) => println!("✓ {label:<12} {}", safe(value)),
-        None => println!("· {label:<12} not detected"),
-    }
-}
-
-fn marker(severity: Severity) -> &'static str {
-    match severity {
-        Severity::Info => "·",
-        Severity::Warning => "⚠",
-        Severity::Error => "✗",
-    }
 }
 
 pub fn print_diff(left: &Snapshot, right: &Snapshot, report: &DiffReport) {
